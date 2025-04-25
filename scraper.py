@@ -15,15 +15,15 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
-    print('status', resp.status)
-    print('error', resp.error)
+
+    html_Links = []
 
     if(resp.status == 200):
-        print('hi')
         ParseHTML = BeautifulSoup(resp.raw_response.content, 'html.parser')
-        lnksInHTML = ParseHTML.find_all('a')
-        print('links', lnksInHTML)
-        #list(lnksInHTML)
+        lnksInHTML = ParseHTML.find_all('a', href=True)
+        for link in lnksInHTML:
+            print(link['href'])
+            html_Links.append(link['href'])
 
     return list()
 
