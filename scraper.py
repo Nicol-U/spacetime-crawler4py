@@ -18,9 +18,10 @@ def extract_next_links(url, resp):
     if(resp.status == 200):
         ParseHTML = BeautifulSoup(resp.raw_response.content, 'html.parser')
 
-        lnksInHTML = ParseHTML.find_all('a')
+        linksInHTML = ParseHTML.find_all('a')
+        for link in linksInHTML:
+            print("l :", link.string)
         #list(lnksInHTML)
-        print('lines: ',lnksInHTML)
 
     return list()
 
