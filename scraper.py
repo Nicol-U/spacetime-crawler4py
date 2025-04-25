@@ -1,6 +1,5 @@
 import re
 from urllib.parse import urlparse
-import requests
 from bs4 import BeautifulSoup
 def scraper(url, resp):
     links = extract_next_links(url, resp)
@@ -21,7 +20,7 @@ def extract_next_links(url, resp):
 
         lnksInHTML = ParseHTML.find_all('a')
         #list(lnksInHTML)
-        print(lnksInHTML)
+        print('lines: ',lnksInHTML)
 
     return list()
 
