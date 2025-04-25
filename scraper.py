@@ -22,7 +22,7 @@ def extract_next_links(url, resp):
         for link in linksInHTML:
             print("l :", link.string)
         #list(lnksInHTML)
-
+    print(resp.error)
     return list()
 
 def is_valid(url):
