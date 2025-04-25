@@ -20,9 +20,9 @@ def extract_next_links(url, resp):
 
         linksInHTML = ParseHTML.find_all('a')
         for link in linksInHTML:
-            print("l :", link.string)
+            print("l :", link)
         #list(lnksInHTML)
-    print(resp.error)
+
     return list()
 
 def is_valid(url):
