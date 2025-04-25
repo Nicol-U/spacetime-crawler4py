@@ -1,6 +1,7 @@
 import re
 from urllib.parse import urlparse
-
+import requests
+from bs4 import BeautifulSoup
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
@@ -15,6 +16,14 @@ def extract_next_links(url, resp):
     #         resp.raw_response.url: the url, again
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
+    ScrapURL = requests.get(url)
+
+    ParseHTML = BeautifulSoup(ScrapURL.text, 'html.parser')
+
+    lnksInHTML = ParseHTML.find_all('a')
+    #list(lnksInHTML)
+    print(lnksInHTML)
+
     return list()
 
 def is_valid(url):
