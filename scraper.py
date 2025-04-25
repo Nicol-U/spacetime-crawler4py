@@ -25,7 +25,7 @@ def extract_next_links(url, resp):
             print(link['href'])
             html_Links.append(link['href'])
 
-    return list()
+    return html_Links
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
