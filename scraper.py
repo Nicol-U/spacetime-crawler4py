@@ -1,9 +1,34 @@
 import re
 from urllib.parse import urlparse
 from bs4 import BeautifulSoup
+
 def scraper(url, resp):
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
+
+#defragments a url by deleting anything after the #, if there is no fragment it does nothing
+def defrag(url):
+    fragmentPos = url.find('#')
+
+    if fragmentPos != -1:
+        return url[:fragmentPos] #slices the fragment off
+
+    return url
+
+def errorCheck(resp):
+
+    #large files
+    if len(resp.raw_response.content) > 1000000: #1mb
+        print("Large file detected: %s" % resp.url)
+        return True
+
+    #empty files despite 200 code
+    if resp.status == 200 and len(resp.raw_response.content) < 100:
+        print("Empty content detected: %s" % resp.url)
+        return True
+
+
+#Implement exact and near webpage similarity detection using the methods discussed in the lecture. Your implementation must be made from scratch, no libraries are allowed.
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -16,16 +41,21 @@ def extract_next_links(url, resp):
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 
-    html_Links = []
+        html_Links = []
 
-    if(resp.status == 200):
-        ParseHTML = BeautifulSoup(resp.raw_response.content, 'html.parser')
-        lnksInHTML = ParseHTML.find_all('a', href=True)
-        for link in lnksInHTML:
-            print(link['href'])
-            html_Links.append(link['href'])
+        if has_error(resp): #returns if error is found, need to add duplicate checking errors
+            return html_Links
 
-    return html_Links
+        if (resp.status == 200):
+            ParseHTML = BeautifulSoup(resp.raw_response.content, 'html.parser')
+            lnksInHTML = ParseHTML.find_all('a', href=True)
+            for link in lnksInHTML:
+                print(link['href']) #delete or change to see what it does
+                defraggedUrl = defrag(href)
+
+                html_Links.append(defraggedUrl)
+
+            return html_Links
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
