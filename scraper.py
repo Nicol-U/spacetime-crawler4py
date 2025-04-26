@@ -49,6 +49,8 @@ def is_valid(url):
                                 + ".informatics.uci.edu|.stat.uci.edu"
                                 + "|today.uci.edu/department/information_computer_sciences",
                                 parsed.path.lower())
+        print(endswith and containsICS)
+        print(url)
         return endswith and containsICS
     except TypeError:
         print ("TypeError for ", parsed)
