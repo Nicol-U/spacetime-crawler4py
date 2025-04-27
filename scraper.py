@@ -175,8 +175,8 @@ def is_valid(url):
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
         containsICS = re.search("ics.uci.edu|cs.uci.edu|"
-                                + "informatics.uci.edu|stat.uci.edu"
-                                + "|today.uci.edu",
+                                + ".informatics.uci.edu|.stat.uci.edu"
+                                + "today.uci.edu/department/information_computer_sciences/",
                                 parsed.netloc.lower())
         print(endswith and containsICS)
         print(url)
