@@ -177,9 +177,9 @@ def is_valid(url):
         containsICS = re.search("ics.uci.edu|cs.uci.edu|"
                                 + ".informatics.uci.edu|.stat.uci.edu"
                                 + "today.uci.edu/department/information_computer_sciences/",
-                                parsed.netloc.lower())
-        print(endswith and containsICS)
-        print(url)
+                                parsed.netloc.lower()) #parsed.path.lower() was og, terminates weird but seems to traverse well
+        #print(endswith and containsICS)
+        #print(url)
         return endswith and containsICS
     except TypeError:
         print ("TypeError for ", parsed)
