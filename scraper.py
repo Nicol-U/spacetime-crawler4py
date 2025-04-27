@@ -2,12 +2,147 @@ import re
 import os
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
+import hashlib
+
+document_fingerprints = {}
+similarity_limit = 0.8
+
 def scraper(url, resp):
     """
     Main scraper funtion that processes pages and extracts links
     """
     links = extract_next_links(url, resp)
     return [link for link in links if is_valid(link)]
+
+def load_stop_words():
+    """
+    Load stop words from file or return empty set if file not found
+    """
+    try:
+        if os.path.exists("stopwords.txt"):
+            with open("stopwords.txt", "r") as file:
+                return set(line.strip() for line in file if line.strip())
+        else:
+            print("Warning: stopwords.txt not found")
+            return set()
+    except Exception as e:
+        print(f"Error loading stopwords.txt: {e}")
+        return set()
+
+def defrag(url):
+    """
+    Defragments URL by deleting anything after the #
+    """
+    fragment_pos = url.find('#')
+    if fragment_pos != -1:
+        return url[:fragment_pos] # Slices the fragment off
+    return url
+
+def createFingerprint(content):
+    """
+    Creates text fingerprints for near duplicate deletion
+    """
+    soup = BeautifulSoup(content, 'html.parser') # Gets all html data from page
+
+    for element in soup(['script','style','header','footer','nav']): # Removes any type of text specified here
+        element.decompose()
+
+    text = soup.get_text(separator=' ').lower() # Gets text from html and seperates by a space if not already there, making everything lowercase too
+    
+    text = re.sub(r'\s+', ' ', text).strip() # Replaces sequences of whitespace with 1 space
+
+    n_length = 5 # Length per fingerprint
+    words = text.split() # Makes text into individual words for fingerprinting
+
+    # If too small check
+    if len(words) < n_length:
+        return set()
+
+    # Makes a set of the ngrams that we will create
+    ngrams = set()
+
+    # Creating ngrams, hashing them, and putting them into the set of ngrams for the page
+    for i in range(len(words) - n_length + 1):
+        ngram = ' '.join(words[i:i+n_length])
+        ngram_hash = hashlib.md5(ngram.encode()).hexdigest()
+        ngrams.add(ngram_hash)
+    
+    # Maybe error checks here??
+
+    return ngrams
+
+def nearDupe(content, url):
+    # Using createFingerprint to get the fingerprint of the site of interest
+    current_fingerprint = createFingerprint(content)
+
+    if len(current_fingerprint) < 10: # Doc too small or fingerprint failed
+        return False
+    
+    # Compares documents and finds the words in common from the fingerprints
+    for seenUrl, seenFingerprint in document_fingerprints.items():
+        if len(seenFingerprint) > 0:
+            intersection = len(current_fingerprint.intersection(seenFingerprint))
+            union = len(current_fingerprint.union(seenFingerprint))
+
+            # If union exists, calculate similarity level
+            if union > 0:
+                similarity = intersection / union
+            else:
+                similarity = 0
+            
+            # Similarity checker, returns true if its similar enough
+            if similarity >= similarity_limit:
+                return True
+        
+    # If not similar enough store fingerprint for future comparisons and return false
+    document_fingerprints[url] = current_fingerprint
+    return False
+
+def errorCheck(resp):
+    """
+    Checks for error conditions in the response
+    """
+    # When raw_response is none
+    if resp.raw_response is None:
+        return True
+
+    # Large files
+    if len(resp.raw_response.content) > 1000000: #1mb
+        print(f"Large file detected: {resp.url}")
+        return True
+
+    # Empty files despite 200 code
+    if resp.status == 200 and len(resp.raw_response.content) < 100:
+        print("Empty content detected: {resp.url}")
+        return True
+
+    # Soft 404 aka error page detector in spite of 200 code
+    try:
+        soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
+        title = soup.title.string.lower() if soup.title else ""
+
+        if any(phrase in title for phrase in ["error", "not found", "404"]):
+            print("Soft 404 found via keywords: {resp.url}")
+            return True
+
+    except Exception as e:
+        print("Error analyzing content: {e}")
+    
+    return False
+
+def calendarUrl(url):
+    # Common calendar patterns
+    calendar_patterns = [r"tribe-bar-date=\d{4}-\d{2}-\d{2}", r"/events/tag/[^/]+/\d{4}-\d{2}", r"/events/tag/[^/]+/day/\d{4}-\d{2}", r"/events/tag/[^/]+/list/", r"/calendar/"]
+
+    # Returns true if text match patterns
+    for pattern in calendar_patterns:
+        if re.search(pattern, url):
+            print("Calendar URL found: {url}")
+            return True
+        
+    return False
+
+#Implement exact and near webpage similarity detection using the methods discussed in the lecture. Your implementation must be made from scratch, no libraries are allowed.
 
 def extract_next_links(url, resp):
     # Implementation required.
@@ -22,12 +157,39 @@ def extract_next_links(url, resp):
 
     html_Links = []
 
-    if(resp.status == 200):
-        ParseHTML = BeautifulSoup(resp.raw_response.content, 'html.parser')
-        lnksInHTML = ParseHTML.find_all('a', href=True)
-        for link in lnksInHTML:
-            print(link['href'])
-            html_Links.append(link['href'])
+    #check for calendar urls and skip them because they lead to infinite trap
+    if calendarUrl(url):
+        print("Skipping calendar URL: {url}")
+        return html_Links
+
+    if errorCheck(resp): #returns if error is found, need to add duplicate checking errors
+        return html_Links
+        
+    if nearDupe(resp.raw_response.content, resp.url):
+        return html_Links
+
+    if resp.status != 200:
+        return html_Links
+
+    if (resp.status == 200):
+        parse_html = BeautifulSoup(resp.raw_response.content, 'html.parser')
+        links_in_html = parse_html.find_all('a', href=True)
+        
+        # Extract links
+        for link in links_in_html:
+            href = link['href']
+
+            # Skip empty links
+            if not href or href == "#":
+                continue
+
+            # Convert Relative URLs to absolute URLs
+            absolute_url = urljoin(resp.url, href)
+
+            # Remove fragment
+            defragged_url = defrag(absolute_url)
+
+            html_Links.append(defragged_url)
 
         return html_Links
 
@@ -63,13 +225,16 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
-        containsICS = re.search("ics.uci.edu|cs.uci.edu|"
-                                + ".informatics.uci.edu|.stat.uci.edu"
-                                + "|today.uci.edu/department/information_computer_sciences",
-                                parsed.path.lower())
-        print(endswith and containsICS)
-        print(url)
-        return endswith and containsICS
+        # containsICS = re.search("ics.uci.edu|cs.uci.edu|"
+        #                         + ".informatics.uci.edu|.stat.uci.edu"
+        #                         + "|today.uci.edu/department/information_computer_sciences",
+        #                         parsed.path.lower())
+        # print(endswith and containsICS)
+        # print(url)
+        # return endswith and containsICS
     except TypeError:
-        print ("TypeError for ", parsed)
-        raise
+        print ("TypeError for ", url)
+        return False
+    except Exception as e:
+        print (f"Error validating {url}: e")
+        return False
