@@ -6,6 +6,7 @@ import hashlib
 
 document_fingerprints = {}
 similarity_limit = 0.8
+document_checksums = set()
 
 uci_edu_sub_domians = {}
 # a dict of subdomains and count of unique pages
@@ -146,6 +147,21 @@ def createFingerprint(content):
 
     return ngrams
 
+#checks for exact duplicates to existing websites
+def exactDupe(content):
+    #creates hash of current site text
+    current_hash = hashlib.md5(content).hexdigest()
+
+    #checks doc against other hashes created and looks for a match, returning True if match found
+    if current_hash in document_checksums:
+        print(f"Exact dupe detected. Hash: {current_hash}")
+        return True
+    
+    #if not found add to list of unique websites
+    document_checksums.add(current_hash)
+
+    return False
+
 def nearDupe(content, url):
     # Using createFingerprint to get the fingerprint of the site of interest
     current_fingerprint = createFingerprint(content)
@@ -234,13 +250,18 @@ def extract_next_links(url, resp):
 
     #check for calendar urls and skip them because they lead to infinite trap
     if calendarUrl(url):
-        print("Skipping calendar URL: {url}")
+        print(f"Skipping calendar URL: {url}")
         return html_Links
 
     if errorCheck(resp): #returns if error is found, need to add duplicate checking errors
         return html_Links
         
+    if exactDUpe(resp.raw_response.content):
+        print(f"Skipping exact dupe: {resp.url}")
+        return html_links
+
     if nearDupe(resp.raw_response.content, resp.url):
+        print(f"Skipping near dupe: {resp.url}")
         return html_Links
 
     if resp.status != 200:
