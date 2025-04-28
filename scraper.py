@@ -7,8 +7,13 @@ import hashlib
 document_fingerprints = {}
 similarity_limit = 0.8
 
-
+uci_edu_sub_domians = {}
+# a dict of subdomains and count of unique pages
 class URLINFO:
+    """
+    store info related to urls in a temp and main instance to compare later
+    and use to update main version might need to
+    """
     def __init__(self):
         self.url = None
         self.word_count = 0
@@ -286,7 +291,7 @@ def is_valid(url):
         if not is_allowed_domain:
             return False
 
-        final_result =  not re.match(
+        final_result = not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
@@ -302,7 +307,17 @@ def is_valid(url):
             tempURL.set_url(url)
             MainURL.update_word_list(tempURL)
             MainURL.update_when_better(tempURL)
-            pass
+
+            # this should give use the subdomain of the uci.edu domain not sure if http: is still
+            # in there
+            """ split netlock into [subdomain.something.something, page/page/page] then get only the pages 
+            no that we have [page/page/page] split by '/' to get [page, page, page] then add that 
+            to the subdomain """
+            split_netloc = netloc.split('uci.edu')
+            pages =  split_netloc[-1].split('/')
+            sub_domain = split_netloc[0]
+            uci_edu_sub_domians[sub_domain] = pages
+
         #save results from this url for report
 
         return final_result
