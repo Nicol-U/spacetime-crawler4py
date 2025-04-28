@@ -7,6 +7,44 @@ import hashlib
 document_fingerprints = {}
 similarity_limit = 0.8
 
+
+class URLINFO:
+    def __init__(self):
+        self.url = None
+        self.word_count = 0
+        self.word_list = {}  # store words that are not stop words
+
+    def set_url(self, url):
+        self.url = url
+
+    def set_word_count(self, word_count):
+        self.word_count = word_count
+
+    def set_word_list(self, word_list):
+        """
+        takes word_list which is passed in through createFingerPrint func
+        then it calls the function load_stop_words() to get a set of stop words
+        then adds non stop words to a dictionary and increments frequcny
+        :param word_list:
+        :return:
+        """
+        for word in word_list:
+            if word not in load_stop_words():
+                if word in self.word_list:
+                    self.word_list[word] += 1
+                else:
+                    self.word_list[word] = 1
+
+    def compare_url_class(self, other):
+
+        pass
+
+
+
+longest_Page = [0, ''] # key is number value is url link
+tempURL = URLINFO()
+currentURL = URLINFO()
+
 def scraper(url, resp):
     """
     Main scraper funtion that processes pages and extracts links
@@ -38,6 +76,7 @@ def defrag(url):
         return url[:fragment_pos] # Slices the fragment off
     return url
 
+
 def createFingerprint(content):
     """
     Creates text fingerprints for near duplicate deletion
@@ -53,6 +92,15 @@ def createFingerprint(content):
 
     n_length = 5 # Length per fingerprint
     words = text.split() # Makes text into individual words for fingerprinting
+
+
+
+    # since we have extracted all the words and remvoed html flags it might be best to compare
+    # length to any previous word page length and update if needed
+    tempURL.set_word_list(content)
+    tempURL.set_word_count(len(words))
+    # this can be used later for word fequency and other things
+
 
     # If too small check
     if len(words) < n_length:
@@ -216,7 +264,7 @@ def is_valid(url):
         if not is_allowed_domain:
             return False
 
-        return not re.match(
+        final_result =  not re.match(
             r".*\.(css|js|bmp|gif|jpe?g|ico"
             + r"|png|tiff?|mid|mp2|mp3|mp4"
             + r"|wav|avi|mov|mpeg|ram|m4v|mkv|ogg|ogv|pdf"
@@ -225,16 +273,23 @@ def is_valid(url):
             + r"|epub|dll|cnf|tgz|sha1"
             + r"|thmx|mso|arff|rtf|jar|csv"
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
-        # containsICS = re.search("ics.uci.edu|cs.uci.edu|"
-        #                         + ".informatics.uci.edu|.stat.uci.edu"
-        #                         + "|today.uci.edu/department/information_computer_sciences",
-        #                         parsed.path.lower())
-        # print(endswith and containsICS)
-        # print(url)
-        # return endswith and containsICS
+
+        if final_result:
+            # since we determined that this is a valid url then we can add it
+
+            tempURL.set_url(url)
+            pass
+        #save results from this url for report
+
+        return final_result
+
     except TypeError:
         print ("TypeError for ", url)
         return False
     except Exception as e:
         print (f"Error validating {url}: e")
         return False
+
+
+
+
