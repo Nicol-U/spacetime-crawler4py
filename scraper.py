@@ -35,15 +35,37 @@ class URLINFO:
                 else:
                     self.word_list[word] = 1
 
-    def compare_url_class(self, other):
+    def update_when_better(self, other):
+        """
+        other = tempURL and this will update MainURL
+        for largest page count and which url it came from.
+        :param other:
+        :return:
+        """
+        if self.word_count < other.word_count:
+            self.word_count = other.word_count
+            self.url = other.url
 
-        pass
-
+    def update_word_list(self, other):
+        """
+        given another class instance, it adds any new frequcies and
+        increments current values
+        then sorts the it
+        this is ment to be called on MainURL with peram being temp
+        :param other:
+        :return:
+        """
+        for word in other.word_list:
+            if word in self.word_list:
+                self.word_list[word] += other.word_list[word]
+            else:
+                self.word_list[word] = other.word_list[word]
+        self.word_list = dict(sorted(self.word_list.items(), key=lambda item: item[1], reverse=True))
 
 
 longest_Page = [0, ''] # key is number value is url link
 tempURL = URLINFO()
-currentURL = URLINFO()
+MainURL = URLINFO()
 
 def scraper(url, resp):
     """
@@ -278,6 +300,8 @@ def is_valid(url):
             # since we determined that this is a valid url then we can add it
 
             tempURL.set_url(url)
+            MainURL.update_word_list(tempURL)
+            MainURL.update_when_better(tempURL)
             pass
         #save results from this url for report
 
