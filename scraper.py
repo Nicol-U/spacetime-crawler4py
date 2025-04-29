@@ -200,7 +200,7 @@ def errorCheck(resp):
 
     # Empty files despite 200 code
     if resp.status == 200 and len(resp.raw_response.content) < 100:
-        print("Empty content detected: {resp.url}")
+        print(f"Empty content detected: {resp.url}")
         return True
 
     # Soft 404 aka error page detector in spite of 200 code
@@ -209,11 +209,11 @@ def errorCheck(resp):
         title = soup.title.string.lower() if soup.title else ""
 
         if any(phrase in title for phrase in ["error", "not found", "404"]):
-            print("Soft 404 found via keywords: {resp.url}")
+            print(f"Soft 404 found via keywords: {resp.url}")
             return True
 
     except Exception as e:
-        print("Error analyzing content: {e}")
+        print(f"Error analyzing content: {e}")
     
     return False
 
@@ -224,7 +224,7 @@ def calendarUrl(url):
     # Returns true if text match patterns
     for pattern in calendar_patterns:
         if re.search(pattern, url):
-            print("Calendar URL found: {url}")
+            print(f"Calendar URL found: {url}")
             return True
         
     return False
@@ -340,8 +340,8 @@ def is_valid(url):
         return final_result
 
     except TypeError:
-        print ("TypeError for ", url)
+        print (f"TypeError for {url}")
         return False
     except Exception as e:
-        print (f"Error validating {url}: e")
+        print (f"Error validating {url}: {e}")
         return False
