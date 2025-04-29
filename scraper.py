@@ -9,7 +9,7 @@ similarity_limit = 0.8
 document_checksums = set()
 
 uci_edu_sub_domians = {}
-# a dict of subdomains and count of unique pages
+# A dict of subdomains and count of unique pages
 class URLINFO:
     """
     store info related to urls in a temp and main instance to compare later
@@ -18,7 +18,7 @@ class URLINFO:
     def __init__(self):
         self.url = None
         self.word_count = 0
-        self.word_list = {}  # store words that are not stop words
+        self.word_list = {}  # Store words that are not stop words
 
     def set_url(self, url):
         self.url = url
@@ -69,7 +69,7 @@ class URLINFO:
         self.word_list = dict(sorted(self.word_list.items(), key=lambda item: item[1], reverse=True))
 
 
-longest_Page = [0, ''] # key is number value is url link
+longest_Page = [0, ''] # Key is number value is url link
 tempURL = URLINFO()
 MainURL = URLINFO()
 
@@ -104,7 +104,6 @@ def defrag(url):
         return url[:fragment_pos] # Slices the fragment off
     return url
 
-
 def createFingerprint(content):
     """
     Creates text fingerprints for near duplicate deletion
@@ -121,14 +120,11 @@ def createFingerprint(content):
     n_length = 5 # Length per fingerprint
     words = text.split() # Makes text into individual words for fingerprinting
 
-
-
     # since we have extracted all the words and remvoed html flags it might be best to compare
     # length to any previous word page length and update if needed
     tempURL.set_word_list(content)
     tempURL.set_word_count(len(words))
     # this can be used later for word fequency and other things
-
 
     # If too small check
     if len(words) < n_length:
@@ -246,26 +242,26 @@ def extract_next_links(url, resp):
     #         resp.raw_response.content: the content of the page!
     # Return a list with the hyperlinks (as strings) scrapped from resp.raw_response.content
 
-    html_Links = []
+    html_links = []
 
     #check for calendar urls and skip them because they lead to infinite trap
     if calendarUrl(url):
         print(f"Skipping calendar URL: {url}")
-        return html_Links
+        return html_links
 
     if errorCheck(resp): #returns if error is found, need to add duplicate checking errors
-        return html_Links
+        return html_links
         
-    if exactDUpe(resp.raw_response.content):
+    if exactDupe(resp.raw_response.content):
         print(f"Skipping exact dupe: {resp.url}")
         return html_links
 
     if nearDupe(resp.raw_response.content, resp.url):
         print(f"Skipping near dupe: {resp.url}")
-        return html_Links
+        return html_links
 
     if resp.status != 200:
-        return html_Links
+        return html_links
 
     if (resp.status == 200):
         parse_html = BeautifulSoup(resp.raw_response.content, 'html.parser')
@@ -285,9 +281,9 @@ def extract_next_links(url, resp):
             # Remove fragment
             defragged_url = defrag(absolute_url)
 
-            html_Links.append(defragged_url)
+            html_links.append(defragged_url)
 
-        return html_Links
+        return html_links
 
 def is_valid(url):
     # Decide whether to crawl this url or not. 
@@ -349,7 +345,3 @@ def is_valid(url):
     except Exception as e:
         print (f"Error validating {url}: e")
         return False
-
-
-
-
