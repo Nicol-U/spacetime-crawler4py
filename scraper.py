@@ -185,6 +185,30 @@ def nearDupe(content, url):
     document_fingerprints[url] = current_fingerprint
     return False
 
+def imageWordRatio(resp):
+    try:
+        soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
+        
+        # image count
+        images = soup.find_all('img')
+        image_count = len(images)
+        
+        # Get text
+        text = soup.get_text(separator=' ')
+        text = re.sub(r'\s+', ' ', text).strip()
+        words = text.split()
+        word_count = len(words)
+        
+        # Image check
+        if image_count > 0 and word_count / image_count < 20:  # filter out if < 20 words per image
+            return True
+            
+        return False
+        
+    except Exception as e:
+        print(f"Error in image heavy check: {e}")
+        return False
+
 def errorCheck(resp):
     """
     Checks for error conditions in the response
@@ -206,11 +230,32 @@ def errorCheck(resp):
     # Soft 404 aka error page detector in spite of 200 code
     try:
         soup = BeautifulSoup(resp.raw_response.content, 'html.parser')
+
         title = soup.title.string.lower() if soup.title else ""
 
-        if any(phrase in title for phrase in ["error", "not found", "404"]):
+        if any(phrase in title for phrase in ["error", "not found", "404", "forbidden", "access denied",
+        "not authorized", "maintenance", "temporarily unavailable", "under construction", "coming soon",
+        "apache", "nginx", "server error", "403", "401", "500"]):
             print(f"Soft 404 found via keywords: {resp.url}")
             return True
+
+        # Remove useless information
+        for element in soup(['script', 'style', 'header', 'footer', 'nav']):
+            element.decompose()
+            
+        # clean text parsing
+        text = soup.get_text(separator=' ')
+        text = re.sub(r'\s+', ' ', text).strip()
+        html_length = len(str(resp.raw_response.content))
+        text_length = len(text)
+        
+        #if any content available, check ratio of actual text
+        if html_length > 0:
+            ratio = text_length / html_length
+            
+            if ratio < 0.1:  
+                print(f"Low info ratio: {resp.url}")
+                return True
 
     except Exception as e:
         print(f"Error analyzing content: {e}")
