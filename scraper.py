@@ -239,24 +239,6 @@ def errorCheck(resp):
             print(f"Soft 404 found via keywords: {resp.url}")
             return True
 
-        # Remove useless information
-        for element in soup(['script', 'style', 'header', 'footer', 'nav']):
-            element.decompose()
-            
-        # clean text parsing
-        text = soup.get_text(separator=' ')
-        text = re.sub(r'\s+', ' ', text).strip()
-        html_length = len(str(resp.raw_response.content))
-        text_length = len(text)
-        
-        #if any content available, check ratio of actual text
-        if html_length > 0:
-            ratio = text_length / html_length
-            
-            if ratio < 0.1:  
-                print(f"Low info ratio: {resp.url}")
-                return True
-
     except Exception as e:
         print(f"Error analyzing content: {e}")
     
@@ -295,6 +277,9 @@ def extract_next_links(url, resp):
         return html_links
 
     if errorCheck(resp): #returns if error is found, need to add duplicate checking errors
+        return html_links
+
+    if imageWordRatio(resp):
         return html_links
         
     if exactDupe(resp.raw_response.content):
