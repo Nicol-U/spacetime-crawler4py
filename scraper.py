@@ -198,8 +198,8 @@ def errorCheck(resp):
         print(f"Large file detected: {resp.url}")
         return True
 
-    # Empty files despite 200 code
-    if resp.status == 200 and len(resp.raw_response.content) < 100:
+    # Empty or very small (low info value) files despite 200 code
+    if resp.status == 200 and len(resp.raw_response.content) < 500:
         print(f"Empty content detected: {resp.url}")
         return True
 
