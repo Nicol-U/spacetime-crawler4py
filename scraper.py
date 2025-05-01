@@ -294,8 +294,11 @@ def is_valid(url):
         if parsed.scheme not in set(["http", "https"]):
             return False
 
-        # Or if you want to block a specific subdomain
+        # blocking specific traps
         if "doku" in url.lower(): #doku trap handling
+            return False
+
+        if "eppstein" in url.lower(): #eppstein trap handling
             return False
 
         netloc = parsed.netloc.lower()
