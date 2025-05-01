@@ -5,7 +5,7 @@ from bs4 import BeautifulSoup
 import hashlib
 
 document_fingerprints = {}
-similarity_limit = 0.8
+similarity_limit = 0.7
 document_checksums = set()
 
 uci_edu_sub_domians = {}
@@ -292,6 +292,10 @@ def is_valid(url):
     try:
         parsed = urlparse(url)
         if parsed.scheme not in set(["http", "https"]):
+            return False
+
+        # Or if you want to block a specific subdomain
+        if "doku" in url.lower(): #doku trap handling
             return False
 
         netloc = parsed.netloc.lower()
