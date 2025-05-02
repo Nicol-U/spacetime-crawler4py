@@ -1,5 +1,7 @@
 import re
 import os
+from itertools import islice
+from logging import exception
 from urllib.parse import urlparse, urljoin
 from bs4 import BeautifulSoup
 import hashlib
@@ -7,6 +9,7 @@ import hashlib
 document_fingerprints = {}
 similarity_limit = 0.7
 document_checksums = set()
+
 
 uci_edu_sub_domians = {}
 # A dict of subdomains and count of unique pages
@@ -34,12 +37,15 @@ class URLINFO:
         :param word_list:
         :return:
         """
-        for word in word_list:
-            if word not in load_stop_words():
-                if word in self.word_list:
-                    self.word_list[word] += 1
-                else:
-                    self.word_list[word] = 1
+        try:
+            for word in word_list:
+                if word not in load_stop_words():
+                    if word in self.word_list:
+                        self.word_list[word] += 1
+                    else:
+                        self.word_list[word] = 1
+        except Exception as e:
+            print(f"line 32 Exception occured {e}")
 
     def update_when_better(self, other):
         """
@@ -61,15 +67,32 @@ class URLINFO:
         :param other:
         :return:
         """
-        for word in other.word_list:
-            if word in self.word_list:
-                self.word_list[word] += other.word_list[word]
+        try:
+            for word in other.word_list:
+                if word in self.word_list:
+                    self.word_list[word] += other.word_list[word]
+                else:
+                    self.word_list[word] = other.word_list[word]
+            self.word_list = dict(sorted(self.word_list.items(), key=lambda item: item[1], reverse=True))
+        except Exception as e:
+            print(f"line 58: {e}\n")
+
+    def get_largest_url(self):
+        try:
+            return self.url, self.word_count
+        except Exception as e:
+            print(f"line 74 Exception: {e}\n")
+
+    def get_word_frequency(self):
+        try:
+            """returns a list that is 50 items long"""
+            if self.word_count < 52:
+                return dict(islice(self.word_list.items(), 51))
             else:
-                self.word_list[word] = other.word_list[word]
-        self.word_list = dict(sorted(self.word_list.items(), key=lambda item: item[1], reverse=True))
+                return self.word_list
+        except Exception as e:
+            print(f"get_word_frequency line 76 Exception: {e}")
 
-
-longest_Page = [0, ''] # Key is number value is url link
 tempURL = URLINFO()
 MainURL = URLINFO()
 
@@ -382,3 +405,34 @@ def is_valid(url):
     except Exception as e:
         print (f"Error validating {url}: {e}")
         return False
+
+def write_URL_Report():
+    """this should make and write to the file i added a try and except in general
+    just incase to keep the crawel from crashing since this is untested"""
+    total_unique_pages = 0
+    try:
+        with open('Report.txt', 'w') as f:
+            # longest url and the number of words
+            f.write(f"longest page {MainURL.get_largest_url()[0]} word count {MainURL.get_largest_url()[1]}\n")
+            f.write("-"*20 + "\n")
+
+            #top 50 words with their number
+            for word, number in MainURL.get_word_frequency().items():
+                f.write(f"{word} ---> {number}\n")
+            f.write("-"*20 + "\n")
+
+            #this should get the subdomains sort them and iterate through subdomain and page count
+            #i am adding to total unique pages since unique pages in each subdomain should add up to total pages
+            f.write(f"subdomain & unique pages counts: \n")
+            for subdomain, pages_cnt in sorted(uci_edu_sub_domians.items()):
+                f.write(f"{subdomain} ---> {pages_cnt}\n")
+                total_unique_pages += pages_cnt
+            f.write("-"*20 + "\n")
+
+            #write the total number of pages
+            f.write(f"Total unique pages counts: \n")
+            f.write(total_unique_pages)
+
+    except Exception as e:
+        print(f"Error writing to Report.txt: {e}")
+
