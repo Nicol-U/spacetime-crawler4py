@@ -145,7 +145,7 @@ def createFingerprint(content):
 
     # since we have extracted all the words and remvoed html flags it might be best to compare
     # length to any previous word page length and update if needed
-    tempURL.set_word_list(content)
+    tempURL.set_word_list(words)
     tempURL.set_word_count(len(words))
     # this can be used later for word fequency and other things
 
@@ -409,7 +409,7 @@ def is_valid(url):
 def write_URL_Report():
     """this should make and write to the file i added a try and except in general
     just incase to keep the crawel from crashing since this is untested"""
-    total_unique_pages = 0
+    total_unique_pages = len(document_checksums)
     try:
         with open('Report.txt', 'w') as f:
             # longest url and the number of words
@@ -417,21 +417,37 @@ def write_URL_Report():
             f.write("-"*20 + "\n")
 
             #top 50 words with their number
+            f.write("Top 50 most common words:\n")
+            word_count = 0
             for word, number in MainURL.get_word_frequency().items():
-                f.write(f"{word} ---> {number}\n")
+                if word_count < 50:
+                    f.write(f"{word} ---> {number}\n")
+                    word_count += 1
+                else:
+                    break
             f.write("-"*20 + "\n")
 
             #this should get the subdomains sort them and iterate through subdomain and page count
             #i am adding to total unique pages since unique pages in each subdomain should add up to total pages
             f.write(f"subdomain & unique pages counts: \n")
-            for subdomain, pages_cnt in sorted(uci_edu_sub_domians.items()):
-                f.write(f"{subdomain} ---> {pages_cnt}\n")
-                total_unique_pages += pages_cnt
+            subdomain_counts = {}
+            for url in document_fingerprints.keys():  # uses URLs tracked
+                parsed = urlparse(url)
+                subdomain = parsed.netloc.lower()
+                if subdomain in subdomain_counts:
+                    subdomain_counts[subdomain] += 1
+                else:
+                    subdomain_counts[subdomain] = 1
+            
+            # prints sorted subdomain counts
+            for subdomain, count in sorted(subdomain_counts.items()):
+                f.write(f"{subdomain} ---> {count}\n")
+            
             f.write("-"*20 + "\n")
 
-            #write the total number of pages
-            f.write(f"Total unique pages counts: \n")
-            f.write(total_unique_pages)
+            # writes total # of unique pages
+            f.write(f"Total unique pages count:\n")
+            f.write(str(total_unique_pages))
 
     except Exception as e:
         print(f"Error writing to Report.txt: {e}")
