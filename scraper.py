@@ -86,14 +86,13 @@ class URLINFO:
     def get_word_frequency(self):
         try:
             """returns a list that is 50 items long"""
-            if self.word_count < 52:
-                return dict(islice(self.word_list.items(), 51))
-            else:
+            if len(self.word_list) <= 50:
                 return self.word_list
+            else:
+                return dict(islice(self.word_list.items(), 50))
         except Exception as e:
             print(f"get_word_frequency line 76 Exception: {e}")
 
-tempURL = URLINFO()
 MainURL = URLINFO()
 
 def scraper(url, resp):
@@ -127,7 +126,7 @@ def defrag(url):
         return url[:fragment_pos] # Slices the fragment off
     return url
 
-def createFingerprint(content):
+def createFingerprint(content, url):
     """
     Creates text fingerprints for near duplicate deletion
     """
@@ -145,9 +144,16 @@ def createFingerprint(content):
 
     # since we have extracted all the words and remvoed html flags it might be best to compare
     # length to any previous word page length and update if needed
-    tempURL.set_word_list(words)
-    tempURL.set_word_count(len(words))
+    temp_url = URLINFO()
+    temp_url.set_url(url)
+    temp_url.set_word_list(words)
+    temp_url.set_word_count(len(words))
     # this can be used later for word fequency and other things
+
+    #set main url
+    MainURL.update_word_list(temp_url)
+    MainURL.update_when_better(temp_url)
+
 
     # If too small check
     if len(words) < n_length:
@@ -183,7 +189,7 @@ def exactDupe(content):
 
 def nearDupe(content, url):
     # Using createFingerprint to get the fingerprint of the site of interest
-    current_fingerprint = createFingerprint(content)
+    current_fingerprint = createFingerprint(content, url)
 
     if len(current_fingerprint) < 10: # Doc too small or fingerprint failed
         return False
@@ -328,13 +334,23 @@ def extract_next_links(url, resp):
             if not href or href == "#":
                 continue
 
-            # Convert Relative URLs to absolute URLs
-            absolute_url = urljoin(resp.url, href)
+            placeholder_patterns = ['YOUR_IP', 'YOUR_DOMAIN', 'YOUR_USERNAME', 'YOUR_PASSWORD']
+            if any(pattern in href for pattern in placeholder_patterns):
+                print(f"skipping placeholder URL trap: {href}")
+                continue
+            
+            try:
+                # Convert Relative URLs to absolute URLs
+                absolute_url = urljoin(resp.url, href)
 
-            # Remove fragment
-            defragged_url = defrag(absolute_url)
+                # Remove fragment
+                defragged_url = defrag(absolute_url)
 
-            html_links.append(defragged_url)
+                html_links.append(defragged_url)
+
+            except Exception as e:
+                print(f"Error parsing URL {href}: {e}")
+                continue
 
         return html_links
 
@@ -379,23 +395,14 @@ def is_valid(url):
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
 
         if final_result:
-            # since we determined that this is a valid url then we can add it
-
-            tempURL.set_url(url)
-            MainURL.update_word_list(tempURL)
-            MainURL.update_when_better(tempURL)
-
-            # this should give use the subdomain of the uci.edu domain not sure if http: is still
-            # in there
-            """ split netlock into [subdomain.something.something, page/page/page] then get only the pages 
-            no that we have [page/page/page] split by '/' to get [page, page, page] then add that 
-            to the subdomain """
-            split_netloc = netloc.split('uci.edu')
-            pages =  split_netloc[-1].split('/')
-            sub_domain = split_netloc[0]
-            uci_edu_sub_domians[sub_domain] = pages
-
-        #save results from this url for report
+            # track subdomain
+            parsed = urlparse(url)
+            netloc = parsed.netloc.lower()
+            
+            if netloc in uci_edu_sub_domians:
+                uci_edu_sub_domians[netloc] += 1
+            else:
+                uci_edu_sub_domians[netloc] = 1
 
         return final_result
 
@@ -428,19 +435,8 @@ def write_URL_Report():
             f.write("-"*20 + "\n")
 
             #this should get the subdomains sort them and iterate through subdomain and page count
-            #i am adding to total unique pages since unique pages in each subdomain should add up to total pages
             f.write(f"subdomain & unique pages counts: \n")
-            subdomain_counts = {}
-            for url in document_fingerprints.keys():  # uses URLs tracked
-                parsed = urlparse(url)
-                subdomain = parsed.netloc.lower()
-                if subdomain in subdomain_counts:
-                    subdomain_counts[subdomain] += 1
-                else:
-                    subdomain_counts[subdomain] = 1
-            
-            # prints sorted subdomain counts
-            for subdomain, count in sorted(subdomain_counts.items()):
+            for subdomain, count in sorted(uci_edu_sub_domians.items()):
                 f.write(f"{subdomain} ---> {count}\n")
             
             f.write("-"*20 + "\n")
