@@ -26,9 +26,35 @@ class URLINFO:
     def set_url(self, url):
         self.url = url
 
-    def set_word_count(self, word_count):
-        self.word_count = word_count
 
+
+    def check_word(self, word):
+        """
+        I beleve the word is already in lower case checked on ed and
+        they said single letter and numbers don't count as words.
+        This goes through every letter and checks if it's in the range of ascii letters
+        :param word:
+        :return:
+        """
+        final_word = word
+
+        if word.isdigit() or len(word) < 2:
+            return False
+
+        for letter in word:
+            ascii_value = ord(letter.lower())
+            if ascii_value >= 97 and ascii_value <= 122:
+                final_word += letter
+
+            if ((ascii_value >= 65) & (ascii_value <= 90)):  # numbers 0-9
+                final_word += letter
+
+        if (word == final_word) and len(final_word) > 1:
+            return True
+
+        return False
+
+        
     def set_word_list(self, word_list):
         """
         takes word_list which is passed in through createFingerPrint func
@@ -39,11 +65,16 @@ class URLINFO:
         """
         try:
             for word in word_list:
-                if word not in load_stop_words():
+                if self.check_word(word) and word not in load_stop_words():
                     if word in self.word_list:
                         self.word_list[word] += 1
+
                     else:
                         self.word_list[word] = 1
+
+                    self.word_count += 1
+
+
         except Exception as e:
             print(f"line 32 Exception occured {e}")
 
@@ -69,6 +100,7 @@ class URLINFO:
         """
         try:
             for word in other.word_list:
+
                 if word in self.word_list:
                     self.word_list[word] += other.word_list[word]
                 else:
@@ -147,7 +179,6 @@ def createFingerprint(content, url):
     temp_url = URLINFO()
     temp_url.set_url(url)
     temp_url.set_word_list(words)
-    temp_url.set_word_count(len(words))
     # this can be used later for word fequency and other things
 
     #set main url
@@ -395,14 +426,14 @@ def is_valid(url):
             + r"|rm|smil|wmv|swf|wma|zip|rar|gz)$", parsed.path.lower())
 
         if final_result:
-            # track subdomain
-            parsed = urlparse(url)
-            netloc = parsed.netloc.lower()
-            
+            #I commented them out since they are already done on line 395 and 396
+            #parsed = urlparse(url)
+            #netloc = parsed.netloc.lower()
+
             if netloc in uci_edu_sub_domians:
-                uci_edu_sub_domians[netloc] += 1
+                uci_edu_sub_domians[netloc].add(path)
             else:
-                uci_edu_sub_domians[netloc] = 1
+                uci_edu_sub_domians[netloc] = set(path)
 
         return final_result
 
@@ -437,7 +468,7 @@ def write_URL_Report():
             #this should get the subdomains sort them and iterate through subdomain and page count
             f.write(f"subdomain & unique pages counts: \n")
             for subdomain, count in sorted(uci_edu_sub_domians.items()):
-                f.write(f"{subdomain} ---> {count}\n")
+                f.write(f"{subdomain} ---> {len(count)}\n")
             
             f.write("-"*20 + "\n")
 
