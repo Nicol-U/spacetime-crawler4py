@@ -430,10 +430,11 @@ def is_valid(url):
             #parsed = urlparse(url)
             #netloc = parsed.netloc.lower()
 
-            if netloc in uci_edu_sub_domians:
-                uci_edu_sub_domians[netloc].add(path)
-            else:
-                uci_edu_sub_domians[netloc] = set(path)
+
+            if netloc not in uci_edu_sub_domians:
+                uci_edu_sub_domians[netloc] = set()
+
+            uci_edu_sub_domians[netloc].add(path)
 
         return final_result
 
