@@ -47,6 +47,8 @@ class URLINFO:
             if ascii_value >= 97 and ascii_value <= 122:
                 final_word += letter
 
+            else:
+                return False
         if (word == final_word) and len(final_word) > 1:
             return True
 
