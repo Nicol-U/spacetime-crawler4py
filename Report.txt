@@ -1,8 +1,0 @@
-longest page None word count 0
---------------------
-Top 50 most common words:
---------------------
-subdomain & unique pages counts: 
---------------------
-Total unique pages count:
-0

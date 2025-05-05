@@ -7,13 +7,13 @@ from bs4 import BeautifulSoup
 import hashlib
 
 document_fingerprints = {}
-similarity_limit = 0.7
+similarity_limit = 0.9
 document_checksums = set()
 unique_urls = set()
 
-
 uci_edu_sub_domians = {}
 # A dict of subdomains and count of unique pages
+
 class URLINFO:
     """
     store info related to urls in a temp and main instance to compare later
@@ -27,34 +27,20 @@ class URLINFO:
     def set_url(self, url):
         self.url = url
 
-
-
     def check_word(self, word):
         """
-        I beleve the word is already in lower case checked on ed and
-        they said single letter and numbers don't count as words.
-        This goes through every letter and checks if it's in the range of ascii letters
-        :param word:
-        :return:
+
         """
         final_word = word
 
         if word.isdigit() or len(word) < 2:
             return False
 
-        for letter in word:
-            ascii_value = ord(letter.lower())
-            if ascii_value >= 97 and ascii_value <= 122:
-                final_word += letter
+        for char in word:
+            if not char.isalpha():
+                return False
 
-            if ((ascii_value >= 65) & (ascii_value <= 90)):  # numbers 0-9
-                final_word += letter
-
-        if (word == final_word) and len(final_word) > 1:
-            return True
-
-        return False
-
+        return True
         
     def set_word_list(self, word_list):
         """
@@ -74,7 +60,6 @@ class URLINFO:
                         self.word_list[word] = 1
 
                     self.word_count += 1
-
 
         except Exception as e:
             print(f"line 32 Exception occured {e}")
@@ -186,7 +171,6 @@ def createFingerprint(content, url):
     MainURL.update_word_list(temp_url)
     MainURL.update_when_better(temp_url)
 
-
     # If too small check
     if len(words) < n_length:
         return set()
@@ -265,7 +249,7 @@ def imageWordRatio(resp):
             return True
             
         return False
-        
+
     except Exception as e:
         print(f"Error in image heavy check: {e}")
         return False
@@ -279,12 +263,12 @@ def errorCheck(resp):
         return True
 
     # Large files
-    if len(resp.raw_response.content) > 1000000: #1mb
+    if len(resp.raw_response.content) > 2500000: #1mb
         print(f"Large file detected: {resp.url}")
         return True
 
     # Empty or very small (low info value) files despite 200 code
-    if resp.status == 200 and len(resp.raw_response.content) < 500:
+    if resp.status == 200 and len(resp.raw_response.content) < 400:
         print(f"Empty content detected: {resp.url}")
         return True
 
@@ -403,10 +387,8 @@ def is_valid(url):
         if "doku" in url.lower(): #doku trap handling
             return False
 
-        if "eppstein" in url.lower(): #eppstein trap handling
-            return False
-
-     
+        # if "eppstein" in url.lower(): #eppstein trap handling
+        #     return False
 
         netloc = parsed.netloc.lower()
         path = parsed.path.lower()
@@ -436,7 +418,6 @@ def is_valid(url):
             #I commented them out since they are already done on line 395 and 396
             #parsed = urlparse(url)
             #netloc = parsed.netloc.lower()
-
 
             if netloc not in uci_edu_sub_domians:
                 uci_edu_sub_domians[netloc] = set()
@@ -486,4 +467,3 @@ def write_URL_Report():
 
     except Exception as e:
         print(f"Error writing to Report.txt: {e}")
-
