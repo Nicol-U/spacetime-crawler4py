@@ -7,7 +7,7 @@ from bs4 import BeautifulSoup
 import hashlib
 
 document_fingerprints = {}
-similarity_limit = 0.7
+similarity_limit = 0.9
 document_checksums = set()
 
 
@@ -398,8 +398,13 @@ def is_valid(url):
         if "doku" in url.lower(): #doku trap handling
             return False
 
+        """
+        Commented this out we need more links and we already have an image trap detector for general pages so it will allow more real links
+
         if "eppstein" in url.lower(): #eppstein trap handling
             return False
+            
+        """
 
         netloc = parsed.netloc.lower()
         path = parsed.path.lower()
