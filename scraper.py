@@ -9,6 +9,7 @@ import hashlib
 document_fingerprints = {}
 similarity_limit = 0.7
 document_checksums = set()
+unique_urls = set()
 
 
 uci_edu_sub_domians = {}
@@ -353,6 +354,10 @@ def extract_next_links(url, resp):
     if (resp.status == 200):
         parse_html = BeautifulSoup(resp.raw_response.content, 'html.parser')
         links_in_html = parse_html.find_all('a', href=True)
+
+    if (resp.status == 200):
+        defragged_url = defrag(resp.url)
+        unique_urls.add(defragged_url)  # adds current url to unique set to correctly count number of unique pages by definition in assignment (by url) rather than by unique content
         
         # Extract links
         for link in links_in_html:
@@ -397,6 +402,8 @@ def is_valid(url):
 
         if "eppstein" in url.lower(): #eppstein trap handling
             return False
+
+     
 
         netloc = parsed.netloc.lower()
         path = parsed.path.lower()
@@ -444,7 +451,7 @@ def is_valid(url):
 def write_URL_Report():
     """this should make and write to the file i added a try and except in general
     just incase to keep the crawel from crashing since this is untested"""
-    total_unique_pages = len(document_checksums)
+    total_unique_pages = len(unique_urls)
     try:
         with open('Report.txt', 'w') as f:
             # longest url and the number of words
