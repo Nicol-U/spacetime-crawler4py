@@ -46,9 +46,6 @@ class URLINFO:
             if ascii_value >= 97 and ascii_value <= 122:
                 final_word += letter
 
-            if ((ascii_value >= 65) & (ascii_value <= 90)):  # numbers 0-9
-                final_word += letter
-
         if (word == final_word) and len(final_word) > 1:
             return True
 
@@ -429,7 +426,6 @@ def is_valid(url):
             #I commented them out since they are already done on line 395 and 396
             #parsed = urlparse(url)
             #netloc = parsed.netloc.lower()
-
 
             if netloc not in uci_edu_sub_domians:
                 uci_edu_sub_domians[netloc] = set()
