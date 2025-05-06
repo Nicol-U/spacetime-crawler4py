@@ -262,7 +262,7 @@ def errorCheck(resp):
         return True
 
     # Large files
-    if len(resp.raw_response.content) > 2500000: #1mb
+    if len(resp.raw_response.content) > 2500000: #2.5mb
         print(f"Large file detected: {resp.url}")
         return True
 
