@@ -29,9 +29,8 @@ class URLINFO:
 
     def check_word(self, word):
         """
-
+        get ride of single letters and only allow words not number to go through
         """
-        final_word = word
 
         if word.isdigit() or len(word) < 2:
             return False
@@ -436,6 +435,7 @@ def is_valid(url):
 def write_URL_Report():
     """this should make and write to the file i added a try and except in general
     just incase to keep the crawel from crashing since this is untested"""
+
     total_unique_pages = len(unique_urls)
     try:
         with open('Report.txt', 'w') as f:
@@ -465,5 +465,57 @@ def write_URL_Report():
             f.write(f"Total unique pages count:\n")
             f.write(str(total_unique_pages))
 
+        #call func that prints raw report info
+        just_in_Case()
     except Exception as e:
         print(f"Error writing to Report.txt: {e}")
+
+
+def just_in_Case():
+    """
+    write's all the raw data to a file doesn't have totals or numbers
+    just the urls, pages and words gathered through the crawl.
+    By words I mean all words not just 50. we can always write code to filter
+    this info again later
+    :return:
+    """
+    try:
+        with open('Just_IN_Case_RawReport.txt', 'w') as f:
+            #this should still be the same
+            f.write(f"longest page {MainURL.get_largest_url()[0]} word count {MainURL.get_largest_url()[1]}\n")
+            f.write("-" * 20 + "\n")
+
+            #all words not jsut hte top 50
+            f.write("All words and there count\n")
+            # we can later split by : if needed to re-read them
+            for word, number in MainURL.word_list.items():
+                f.write(f"{word}:{number}\n")
+            f.write("-" * 20 + "\n")
+
+            # writes subdomains and the pages not the number but the page name
+            f.write(f"subdomain & unique pages counts: \n")
+            for subdomain, PageSet in sorted(uci_edu_sub_domians.items()):
+                f.write(f"{subdomain}:")
+                for page in PageSet:
+                    f.write(f"{page},")
+                f.write("\n")
+            f.write("-" * 20 + "\n")
+
+        # write all the pages from carl's unique url set
+        # Maybe not needed since unique pages adds up to/has the
+        # same elements as the function above
+        """    f.write(f"ALL unique pages:\n")
+            for elem in unique_urls:
+                f.write(f"{elem}\n")
+            f.write("-" * 20 + "\n")
+            
+        """
+
+
+    except Exception as e:
+        print(f"Error writing to RawReport.txt: {e}")
+
+
+
+
+
